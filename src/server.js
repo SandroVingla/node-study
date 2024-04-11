@@ -1,17 +1,31 @@
+require("express-async-errors")
+const database = require("./database/sqlite")
+
+const AppError = require("./utils/appError")
+
 const express = require("express")
+const routes = require("./routes")
 
 const app = express();
+app.use(express.json())
 
-app.get("/message/:id/:user", (request, response) => {
-  const {id, user} = request.params;
+app.use(routes)
+database();
 
-  response.send(`Id da mensagen ${id} para o usuário ${user}`)
-})
+app.use((request, error, response, next) => {
+  if(error instanceof AppError) {
+    return response.status(error.statusCode).json({
+      status: "error",
+      message: error.message,
+    });
+  }
 
-app.get("/users", (request,response) => {
-  const {page, limit} = request.query; 
+  console.error(error.status);
 
-  response.send(`Pagina ${page}. Mostrar: ${limit}`)
+  return response.status(500).json({
+    status: "error",
+    message: "Internal server error!!"
+  })
 })
 
 const PORT = 3333;
